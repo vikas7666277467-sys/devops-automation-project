@@ -1,0 +1,38 @@
+name: DevOps Automation CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: List Project Files
+        run: ls -la
+
+      - name: Validate Dockerfile
+        run: |
+          if [ -f docker/Dockerfile ]; then
+            echo "Dockerfile Found"
+          else
+            echo "Dockerfile Missing"
+            exit 1
+          fi
+
+      - name: Validate Terraform
+        run: |
+          if [ -f terraform/main.tf ]; then
+            echo "Terraform Files Found"
+          else
+            echo "Terraform Files Missing"
+            exit 1
+          fi
+
+      - name: Pipeline Completed
+        run: echo "CI Validation Successful"
