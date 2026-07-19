@@ -1,0 +1,29 @@
+# Terraform working state and local values
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+crash.log
+ecr-image-ids.json
+
+# Secrets and keys
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+
+# Ansible runtime artifacts
+*.retry
+ansible/facts/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs and temporary files
+*.log
+tmp/

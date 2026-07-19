@@ -1,0 +1,15 @@
+# Copy this file to terraform.tfvars and set values for your AWS account.
+# The example CIDR is documentation-only and intentionally cannot expose a real host.
+aws_region       = "ap-south-1"
+key_pair_name    = "devops-project-key"
+trusted_cidr     = "203.0.113.10/32"
+instance_type    = "t3.medium"
+root_volume_size = 30
+
+common_tags = {
+  Project     = "demoproject_devops_project1"
+  ManagedBy   = "Terraform"
+  Purpose     = "DevOps-Training"
+  Environment = "Demo"
+  Owner       = "DevOps-Team"
+}

@@ -1,0 +1,124 @@
+---
+- name: Install and configure Jenkins build server
+  hosts: jenkins
+  become: true
+  gather_facts: true
+
+  vars:
+    jenkins_key_url: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+    jenkins_key_path: /usr/share/keyrings/jenkins-keyring.asc
+    aws_cli_archive: /tmp/awscliv2.zip
+
+  pre_tasks:
+    - name: Require a Debian-family operating system
+      ansible.builtin.assert:
+        that:
+          - ansible_os_family == "Debian"
+        fail_msg: "This playbook supports the Ubuntu image provisioned by Terraform."
+
+    - name: Refresh apt metadata
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  tasks:
+    - name: Install base packages, Java 21, Git, Docker, and AWS CLI prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - fontconfig
+          - git
+          - gnupg
+          - openjdk-21-jre
+          - python3-docker
+          - unzip
+          - docker.io
+        state: present
+
+    - name: Download the current Jenkins LTS repository signing key
+      ansible.builtin.get_url:
+        url: "{{ jenkins_key_url }}"
+        dest: "{{ jenkins_key_path }}"
+        mode: "0644"
+
+    - name: Configure the Jenkins LTS apt repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by={{ jenkins_key_path }}] https://pkg.jenkins.io/debian-stable binary/"
+        filename: jenkins
+        state: present
+        update_cache: true
+
+    - name: Install Jenkins LTS
+      ansible.builtin.apt:
+        name: jenkins
+        state: present
+
+    - name: Download AWS CLI v2
+      ansible.builtin.get_url:
+        url: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip
+        dest: "{{ aws_cli_archive }}"
+        mode: "0644"
+
+    - name: Extract AWS CLI v2 installer
+      ansible.builtin.unarchive:
+        src: "{{ aws_cli_archive }}"
+        dest: /tmp
+        remote_src: true
+        creates: /tmp/aws/install
+
+    - name: Install or update AWS CLI v2
+      ansible.builtin.command:
+        cmd: /tmp/aws/install --update
+      register: aws_cli_install
+      changed_when: "'You can now run' in aws_cli_install.stdout"
+
+    - name: Add Jenkins service account to the Docker group
+      ansible.builtin.user:
+        name: jenkins
+        groups: docker
+        append: true
+      notify: Restart Jenkins
+
+    - name: Enable and start Docker
+      ansible.builtin.systemd_service:
+        name: docker
+        enabled: true
+        state: started
+
+    - name: Enable and start Jenkins
+      ansible.builtin.systemd_service:
+        name: jenkins
+        enabled: true
+        state: started
+
+    - name: Wait for Jenkins HTTP endpoint
+      ansible.builtin.uri:
+        url: http://127.0.0.1:8080/login
+        status_code: 200
+      register: jenkins_http
+      retries: 30
+      delay: 5
+      until: jenkins_http.status == 200
+
+    - name: Collect installed tool versions
+      ansible.builtin.command:
+        cmd: "{{ item }}"
+      loop:
+        - java -version
+        - git --version
+        - docker --version
+        - aws --version
+      register: tool_versions
+      changed_when: false
+      failed_when: tool_versions.rc != 0
+
+    - name: Report successful installation
+      ansible.builtin.debug:
+        msg: "Jenkins, Java, Git, Docker, and AWS CLI are installed; Jenkins is responding on port 8080."
+
+  handlers:
+    - name: Restart Jenkins
+      ansible.builtin.systemd_service:
+        name: jenkins
+        state: restarted

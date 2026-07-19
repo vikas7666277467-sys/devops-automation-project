@@ -1,0 +1,60 @@
+---
+- name: Deploy the NGINX application image from Amazon ECR
+  hosts: jenkins
+  become: true
+  gather_facts: false
+
+  vars:
+    ecr_repository_url: "{{ lookup('env', 'ECR_REPOSITORY_URL') }}"
+    aws_region: "{{ lookup('env', 'AWS_REGION') | default('ap-south-1', true) }}"
+    image_tag: "{{ lookup('env', 'IMAGE_TAG') | default('latest', true) }}"
+    container_name: demoproject-nginx
+
+  pre_tasks:
+    - name: Validate required deployment input
+      ansible.builtin.assert:
+        that:
+          - ecr_repository_url | length > 0
+          - "'.dkr.ecr.' in ecr_repository_url"
+        fail_msg: "Export ECR_REPOSITORY_URL from the Terraform ecr_repository_url output."
+
+  tasks:
+    - name: Obtain a temporary ECR authentication token from the instance role
+      ansible.builtin.command:
+        cmd: "aws ecr get-login-password --region {{ aws_region }}"
+      register: ecr_password
+      changed_when: false
+      no_log: true
+
+    - name: Authenticate Docker to Amazon ECR
+      community.docker.docker_login:
+        registry_url: "{{ ecr_repository_url.split('/')[0] }}"
+        username: AWS
+        password: "{{ ecr_password.stdout }}"
+        reauthorize: true
+      no_log: true
+
+    - name: Pull and run the NGINX container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ ecr_repository_url }}:{{ image_tag }}"
+        pull: always
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "80:80"
+        container_default_behavior: no_defaults
+
+    - name: Verify the deployed web page
+      ansible.builtin.uri:
+        url: http://127.0.0.1/
+        return_content: true
+        status_code: 200
+      register: app_response
+      retries: 12
+      delay: 5
+      until: "'Welcome to DEMO Project' in app_response.content"
+
+    - name: Report successful deployment
+      ansible.builtin.debug:
+        msg: "{{ ecr_repository_url }}:{{ image_tag }} is serving the expected page on port 80."
