@@ -1,0 +1,28 @@
+---
+- name: Install Docker on Ubuntu
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - docker.io
+        state: present
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Verify Docker Installation
+      command: docker --version
+      register: docker_version
+
+    - debug:
+        var: docker_version.stdout
