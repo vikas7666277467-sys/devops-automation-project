@@ -1,3 +1,9 @@
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-Automated-blue?logo=githubactions)
+![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker)
+![Jenkins](https://img.shields.io/badge/Jenkins-CI%2FCD-red?logo=jenkins)
+![Terraform](https://img.shields.io/badge/Terraform-IaC-7B42BC?logo=terraform)
+![Ansible](https://img.shields.io/badge/Ansible-Automation-EE0000?logo=ansible)
+
 # 🚀 DevOps Automation Project
 
 A complete DevOps Automation Project demonstrating Infrastructure as Code, CI/CD, Configuration Management, and Containerization.
