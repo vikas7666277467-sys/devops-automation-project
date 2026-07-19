@@ -1,3 +1,20 @@
+# 🚀 DevOps Automation Project
+
+A complete DevOps Automation Project demonstrating Infrastructure as Code, CI/CD, Configuration Management, and Containerization.
+
+## 🚀 Technologies Used
+
+- Git & GitHub
+- GitHub Actions
+- Jenkins
+- Docker
+- Docker Compose
+- Ansible
+- Terraform
+- Bash Scripting
+- Linux
+
+## 📂 Project Structure
 # End-to-End DevOps Automation on AWS
 
 [![Terraform](https://img.shields.io/badge/Terraform-1.7%2B-7B42BC)](https://developer.hashicorp.com/terraform)
